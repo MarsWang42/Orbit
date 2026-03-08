@@ -1,0 +1,16 @@
+services:
+  orbit:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./workspaces:/app/workspaces
+      - claude-config:/root/.claude
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+volumes:
+  claude-config:

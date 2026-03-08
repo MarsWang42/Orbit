@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+data/
+workspaces/
+orbit.db
+orbit.db-wal
+orbit.db-shm
