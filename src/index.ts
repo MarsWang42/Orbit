@@ -875,7 +875,7 @@ async function startCodingSession(ctx: Context, alias: string, task: string) {
   }
 
   const chatId = ctx.chat!.id;
-  const topicName = `[${alias}] ${task.slice(0, 80 - alias.length - 3)}`;
+  const topicName = `\u{1F528} [${alias}] ${task.slice(0, 78 - alias.length - 3)}`;
 
   try {
     const worktree = await createWorktree(ws.path, alias, task);
@@ -1037,7 +1037,7 @@ async function handleNewTopic(ctx: Context, prompt: string) {
   const chatId = ctx.chat!.id;
   const defaultAlias = getSetting("default_workspace");
   const cleanText = prompt.replace(/^\[reply to: [^\]]*\]\n/, "");
-  const topicName = `[Orbit] ${cleanText.slice(0, 72) || "Claude session"}`;
+  const topicName = `\u{1F4AD} [Orbit] ${cleanText.slice(0, 70) || "Claude session"}`;
 
   try {
     const topic = await ctx.api.createForumTopic(chatId, topicName);
