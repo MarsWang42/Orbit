@@ -64,6 +64,7 @@ export const en = {
   "coding.btn_clone": "Clone existing repo",
   "coding.btn_create": "Create new repo",
   "coding.send_name": "What should the new repo be called? Send a name like `my-project`.",
+  "coding.name_is_url": "That looks like a URL — switching to clone mode.",
   "coding.repo_name_taken": "The repo name `{{name}}` is already taken on GitHub. Please choose a different name.",
   "coding.creating_repo": "Creating repo `{{name}}`...",
   "coding.repo_created": "Repo `{{name}}` created. Now send a task description or GitHub issue/PR URL.",

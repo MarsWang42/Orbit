@@ -25,7 +25,7 @@ import {
 } from "./db";
 import { existsSync, mkdirSync } from "fs";
 import { t, setLangCache } from "./i18n";
-import { createRepo, repoExists, listPRsByHead, getPRComments, parseRepoFromRemote, tokenizeUrl, getAuthenticatedUser, forkRepo } from "./github";
+import { createRepo, repoExists, listPRsByHead, getPRComments, parseRepoFromRemote, tokenizeUrl, getAuthenticatedUser, forkRepo, getOctokit } from "./github";
 import { run, runSilent } from "./shell";
 import { toBranchName, escapeMarkdown, withRetry } from "./utils";
 
@@ -587,8 +587,14 @@ async function handleSetupTextInput(ctx: Context, text: string, step: string) {
   const input = text.trim();
 
   if (step === "existing_url") {
-    const isGitUrl = /^https?:\/\//.test(input) || input.endsWith(".git");
+    const isGitUrl = /^https?:\/\//.test(input) || /^git@/.test(input) || /github\.com[/:]/i.test(input) || input.endsWith(".git");
     if (!isGitUrl) {
+      await ctx.reply(t("setup.invalid_url"));
+      return;
+    }
+    // Validate repo URL is parseable before cloning
+    const parsed = parseRepoFromRemote(input);
+    if (!parsed) {
       await ctx.reply(t("setup.invalid_url"));
       return;
     }
@@ -686,7 +692,8 @@ async function handleSetupTextInput(ctx: Context, text: string, step: string) {
 }
 
 async function finishSetupWithClone(ctx: Context, url: string) {
-  const alias = url.replace(/\.git$/, "").split("/").pop()?.toLowerCase() ?? "vault";
+  const parsed = parseRepoFromRemote(url);
+  const alias = parsed ? parsed.repo.toLowerCase() : (url.replace(/\.git$/, "").split("/").pop()?.toLowerCase() ?? "vault");
   await ctx.reply(t("setup.cloning", { alias }), { parse_mode: "Markdown" });
 
   const result = await cloneRepo(alias, url);
@@ -708,6 +715,18 @@ async function finishSetupWithClone(ctx: Context, url: string) {
 
 async function handleCodingTextInput(ctx: Context, text: string, step: string) {
   if (step === "awaiting_new_name") {
+    // Detect if user pasted a URL instead of a repo name
+    // Broad regex: catches https://..., http://..., git@..., github.com/..., and .git suffix
+    const isGitUrl = /^https?:\/\//.test(text) || /^git@/.test(text) || /github\.com[/:]/i.test(text) || text.endsWith(".git");
+    if (isGitUrl) {
+      // Redirect to clone flow instead of creating a mangled repo name
+      setSetting("coding_step", "awaiting_url");
+      await ctx.reply(t("coding.name_is_url"));
+      // Re-enter with the URL in the clone flow
+      await handleCodingTextInput(ctx, text, "awaiting_url");
+      return;
+    }
+
     const repoName = text.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9_.-]/g, "");
     if (!repoName) {
       await ctx.reply(t("setup.invalid_name"));
@@ -741,13 +760,20 @@ async function handleCodingTextInput(ctx: Context, text: string, step: string) {
   }
 
   if (step === "awaiting_url") {
-    const isGitUrl = /^https?:\/\//.test(text) || text.endsWith(".git");
+    const isGitUrl = /^https?:\/\//.test(text) || /^git@/.test(text) || /github\.com[/:]/i.test(text) || text.endsWith(".git");
     if (!isGitUrl) {
       await ctx.reply(t("setup.invalid_url"));
       return;
     }
 
-    const alias = text.replace(/\.git$/, "").split("/").pop()?.toLowerCase() ?? "project";
+    // Validate we can parse owner/repo from the URL before attempting clone
+    const parsed = parseRepoFromRemote(text);
+    if (!parsed) {
+      await ctx.reply(t("setup.invalid_url"));
+      return;
+    }
+
+    const alias = parsed.repo.toLowerCase();
     const existing = getWorkspace(alias);
     if (existing) {
       setSetting("coding_step", `awaiting_task:${alias}`);
@@ -755,11 +781,23 @@ async function handleCodingTextInput(ctx: Context, text: string, step: string) {
       return;
     }
 
+    // Verify the repo actually exists on GitHub before cloning
+    if (config.GH_TOKEN) {
+      const ok = getOctokit();
+      if (ok) {
+        try {
+          await ok.rest.repos.get({ owner: parsed.owner, repo: parsed.repo });
+        } catch {
+          await ctx.reply(t("setup.clone_failed", { error: `Repository ${parsed.owner}/${parsed.repo} not found on GitHub.` }));
+          return;
+        }
+      }
+    }
+
     // Claim the step before async work to prevent double-processing
     setSetting("coding_step", "");
 
     let cloneUrl = text;
-    const parsed = parseRepoFromRemote(text);
     if (parsed && config.GH_TOKEN) {
       const me = await getAuthenticatedUser();
       if (me && parsed.owner.toLowerCase() !== me.toLowerCase()) {
@@ -1080,7 +1118,7 @@ async function cloneRepo(alias: string, repoUrl: string): Promise<{ ok: true; pa
 }
 
 async function handleWorkspaceAdd(ctx: Context, alias: string, target: string) {
-  const isGitUrl = /^https?:\/\//.test(target) || target.endsWith(".git");
+  const isGitUrl = /^https?:\/\//.test(target) || /^git@/.test(target) || /github\.com[/:]/i.test(target) || target.endsWith(".git");
 
   if (isGitUrl) {
     await ctx.reply(t("ws.cloning", { alias }));

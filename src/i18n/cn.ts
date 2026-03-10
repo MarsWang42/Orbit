@@ -66,6 +66,7 @@ export const cn: Record<TranslationKey, string> = {
   "coding.btn_clone": "克隆已有仓库",
   "coding.btn_create": "创建新仓库",
   "coding.send_name": "新仓库叫什么名字？发送一个名称，如 `my-project`。",
+  "coding.name_is_url": "检测到 URL — 已切换到克隆模式。",
   "coding.repo_name_taken": "仓库名 `{{name}}` 在 GitHub 上已被使用。请选择其他名称。",
   "coding.creating_repo": "正在创建仓库 `{{name}}`...",
   "coding.repo_created": "仓库 `{{name}}` 已创建。现在发送任务描述或 GitHub issue/PR URL。",
