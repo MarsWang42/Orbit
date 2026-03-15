@@ -69,8 +69,9 @@ fi
 # --- 5. Clone Orbit ---
 INSTALL_DIR="${ORBIT_DIR:-$HOME/orbit}"
 
-if [ -d "$INSTALL_DIR" ]; then
+if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/package.json" ]; then
   echo "[ok] Orbit already at $INSTALL_DIR"
+  echo "     To upgrade, run: bash $INSTALL_DIR/upgrade.sh"
   cd "$INSTALL_DIR"
   git pull --ff-only 2>/dev/null || echo "[skip] git pull (not a clean state)"
 else
@@ -145,4 +146,7 @@ if [ "$OS" = "Linux" ] && [ -d /etc/systemd/system ]; then
   echo "  Or use systemd:"
   echo "     sudo systemctl enable --now orbit"
 fi
+echo ""
+echo "To upgrade later:"
+echo "  bash $INSTALL_DIR/upgrade.sh"
 echo ""

@@ -66,6 +66,22 @@ claude login
 bun run dev
 ```
 
+## Upgrading
+
+From your Orbit directory:
+
+```bash
+bash upgrade.sh
+```
+
+The script auto-detects your deployment mode (systemd, Docker, or local), backs up the database, pulls the latest code, and restarts the service. For Docker, it rebuilds the image automatically.
+
+You can also run it remotely:
+
+```bash
+ORBIT_DIR=~/orbit bash <(curl -fsSL https://raw.githubusercontent.com/MarsWang42/Orbit/main/upgrade.sh)
+```
+
 ## Configuration
 
 | Variable | Required | Description |
