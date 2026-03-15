@@ -74,6 +74,8 @@ export const cn: Record<TranslationKey, string> = {
   "coding.btn_approve": "批准",
   "coding.btn_revise": "修改...",
   "coding.executing_plan": "正在执行计划...",
+  "coding.repo_not_found": "仓库 `{{owner}}/{{repo}}` 不存在或无法访问。请检查 URL 后重试。",
+  "coding.repo_no_access": "你没有访问 `{{owner}}/{{repo}}` 的权限。请确认仓库存在且你的 GitHub token 有访问权限。",
   "coding.forking": "仓库属于 `{{owner}}/{{repo}}` — 正在 fork 到你的账户...",
   "coding.forked": "已 fork 为 `{{name}}`。",
   "coding.topic_failed": "无法为此编码会话创建主题。",

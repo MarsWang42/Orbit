@@ -72,6 +72,8 @@ export const en = {
   "coding.btn_revise": "Revise...",
   "coding.executing_plan": "Executing plan...",
   "coding.plan_not_found": "Plan not found. The plan may have expired. Please start a new coding session.",
+  "coding.repo_not_found": "Repository `{{owner}}/{{repo}}` does not exist or is not accessible. Please check the URL and try again.",
+  "coding.repo_no_access": "You don't have permission to access `{{owner}}/{{repo}}`. Make sure the repo exists and your GitHub token has access.",
   "coding.forking": "Repo belongs to `{{owner}}/{{repo}}` — forking to your account...",
   "coding.forked": "Forked as `{{name}}`.",
   "coding.topic_failed": "Failed to create a topic for this coding session.",

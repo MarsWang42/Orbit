@@ -94,6 +94,20 @@ export async function getPRComments(
   return comments;
 }
 
+export async function verifyRepoAccess(owner: string, repo: string): Promise<{ accessible: boolean; reason?: string }> {
+  const ok = getOctokit();
+  if (!ok) return { accessible: false, reason: "GH_TOKEN not configured" };
+
+  try {
+    await ok.rest.repos.get({ owner, repo });
+    return { accessible: true };
+  } catch (err: any) {
+    if (err.status === 404) return { accessible: false, reason: "not_found" };
+    if (err.status === 403) return { accessible: false, reason: "forbidden" };
+    return { accessible: false, reason: `GitHub API error: ${err.status}` };
+  }
+}
+
 export async function getAuthenticatedUser(): Promise<string | null> {
   const ok = getOctokit();
   if (!ok) return null;

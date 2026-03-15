@@ -25,7 +25,7 @@ import {
 } from "./db";
 import { existsSync, mkdirSync } from "fs";
 import { t, setLangCache } from "./i18n";
-import { createRepo, repoExists, listPRsByHead, getPRComments, parseRepoFromRemote, tokenizeUrl, getAuthenticatedUser, forkRepo } from "./github";
+import { createRepo, repoExists, listPRsByHead, getPRComments, parseRepoFromRemote, tokenizeUrl, getAuthenticatedUser, forkRepo, verifyRepoAccess } from "./github";
 import { run, runSilent } from "./shell";
 import { toBranchName, escapeMarkdown, withRetry } from "./utils";
 
@@ -755,11 +755,26 @@ async function handleCodingTextInput(ctx: Context, text: string, step: string) {
       return;
     }
 
+    // Verify repository exists and is accessible before attempting clone
+    const parsed = parseRepoFromRemote(text);
+    if (parsed) {
+      const access = await verifyRepoAccess(parsed.owner, parsed.repo);
+      if (!access.accessible) {
+        if (access.reason === "not_found") {
+          await ctx.reply(t("coding.repo_not_found", { owner: parsed.owner, repo: parsed.repo }), { parse_mode: "Markdown" });
+        } else if (access.reason === "forbidden") {
+          await ctx.reply(t("coding.repo_no_access", { owner: parsed.owner, repo: parsed.repo }), { parse_mode: "Markdown" });
+        } else {
+          await ctx.reply(t("setup.clone_failed", { error: access.reason ?? "Unknown error" }));
+        }
+        return;
+      }
+    }
+
     // Claim the step before async work to prevent double-processing
     setSetting("coding_step", "");
 
     let cloneUrl = text;
-    const parsed = parseRepoFromRemote(text);
     if (parsed && config.GH_TOKEN) {
       const me = await getAuthenticatedUser();
       if (me && parsed.owner.toLowerCase() !== me.toLowerCase()) {
